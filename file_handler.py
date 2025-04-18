@@ -20,7 +20,15 @@ def handle_file_upload(app, process_pdf):
 
         if file and file.filename.endswith('.pdf'):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            upload_folder = app.config['UPLOAD_FOLDER']
+            processed_folder = app.config['PROCESSED_FOLDER']
+
+            # Ensure folders exist
+            os.makedirs(upload_folder, exist_ok=True)
+            os.makedirs(processed_folder, exist_ok=True)
+
+            filepath = os.path.join(upload_folder, filename)
             file.save(filepath)
 
             # Process the uploaded PDF
