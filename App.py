@@ -15,8 +15,8 @@ from file_handler import handle_file_upload #Import the upload logic
 app = Flask(__name__)
 # Allow multiple domains
 allowed_origins = [
-    "https://pdf-to-fraud-net-frontend.vercel.app/",
-    "http://localhost:5173/",
+    "https://pdf-to-fraud-net-frontend.vercel.app",
+    "http://localhost:5173",
 ]
 
 CORS(app, origins=allowed_origins)
