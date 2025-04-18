@@ -111,7 +111,7 @@ def handle_file_upload(app, process_pdf):
                 G.add_edge(
                     parent_account,
                     child_account,
-                    title=f"Transaction ID: {transaction_id}<br>Amount: {transaction_amount}<br>Disputed: {disputed_amount}",
+                    title=f"Transaction ID: {transaction_id}\nAmount: {transaction_amount}\nDisputed: {disputed_amount}",
                 )
 
             # Visualize using Pyvis
@@ -119,7 +119,7 @@ def handle_file_upload(app, process_pdf):
 
             # Add nodes to Pyvis network
             for node, attributes in G.nodes(data=True):
-                node_title = f"Account: {node}<br>Layer: {attributes['layer']}"
+                node_title = f"Account: {node}\nLayer: {attributes['layer']}"
                 net.add_node(node, label=node, title=node_title, group=attributes["layer"])
 
             # Add edges to Pyvis network
