@@ -87,21 +87,40 @@ def handle_file_upload(app, process_pdf):
 
             root_node_id = None
 
+            # Counter for generating unique IDs for missing accounts
+            missing_account_counter = 1
+            missing_account_prefix = "Missing_A_"
+
+            # Build mappings: account -> bank name (including for missing account records)
+            acc_to_bank = {}
+            missing_account_map = {}  # Optional extra mapping if needed later
+
+
             # Add nodes and edges with metadata
             for key, record in data.items():
                 # Extract fields and replace None with "Not available"
                 parent_account = record.get("Second Col Account Number", "Not available")
-                if parent_account is None:
-                    parent_account = "Not available"
+                if not parent_account or str(parent_account).strip() == "":
+                    parent_account = f"{missing_account_prefix}{missing_account_counter}"
+                    missing_account_counter += 1
+                else:
+                    parent_account = str(parent_account)
 
-                child_account = record.get("Account Number", "Not available")
-                if child_account is None:
-                    child_account = "Not available"
+                # Handle child account
+                child_account = record.get("Account Number")
+                child_bank_name = record.get("Processed_Bank_Name", "Unknown").lower()
+
+                if not child_account or str(child_account).strip() == "":
+                    child_account = f"{missing_account_prefix}{missing_account_counter}"
+                    acc_to_bank[child_account] = child_bank_name
+                    missing_account_counter += 1
+                else:
+                    acc_to_bank[str(child_account)] = child_bank_name
 
                 layer = record.get("Layer", "Not available")
                 if layer is None:  # Check if layer is None
                     print("Layer is None. Breaking the loop.")
-                    break  # Exit the loop
+                    continue  # Exit the loop
 
                 if root_node_id is None and layer == 1:
                     root_node_id = parent_account
@@ -213,22 +232,8 @@ def handle_file_upload(app, process_pdf):
             # Add nodes with optional bank icons
             for node, attr in G.nodes(data=True):
                 # Match the current node (account number) to a record's Account Number
-                bank_name = None
-                for key, record in data.items():
-                        acc_num = record.get("Account Number")
-                        if str(acc_num) == str(node):  # Ensure string comparison
-                            raw_bank_name = record.get("Processed_Bank_Name")
-                            if raw_bank_name:
-                                bank_name = raw_bank_name.lower()  # Convert to lowercase
-                            break
-
-                icon_url = None
-                if bank_name:
-                    icon_url = bank_icon_map.get(bank_name)
-
-                if not icon_url:
-                    icon_url = bank_icon_map.get("default")  # Fallback to default icon if defined
-
+                bank_name = acc_to_bank.get(node, "unknown").lower()
+                icon_url = bank_icon_map.get(bank_name)
                 node_title = f"Account: {node}\nLayer: {attr['layer']}\nBank: {bank_name or 'Unknown'}"
 
                 node_options = {
@@ -247,6 +252,20 @@ def handle_file_upload(app, process_pdf):
                         "borderWidth": 1.5,
                         "borderWidthSelected": 3
                 })
+                else:
+
+                    # Optional: Style for missing accounts
+                    if node.startswith(missing_account_prefix):
+                        node_options.update({
+                            "shape": "circle",
+                            "color": "#999999",
+                            "title": node_title + "\n(Missing Account)"
+                        })
+                    else:
+                        node_options.update({
+                            "shape": "circle",
+                            "color": "#92c952"
+                        })                    
                     
                 net.add_node(node, **node_options)
 
